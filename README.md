@@ -1,6 +1,6 @@
 # Rhythm-VI — Xbox Series Compatibility Layer for Windows (RTX 4050 / 16 GB RAM Tuned)
 
-**Rhythm-VI** is a Windows compatibility layer for running Xbox Series titles natively on PC from user-supplied game files, built by combining [VIctory-Belobug-AMD](https://github.com/Belobug/VIctory-Belobug-AMD) (Renderer Ports #1, #2, #5, #6, #7 + Residency) and [ScarlettPort](https://github.com/ZigZagBoi1/ScarlettPort) (`FastBoot`, `SkipCutscenes`, `LoadUnpaced`, `PressFile`, `RayTracing=0`), plus **Rhythm-VI** optimizations for **NVIDIA Ada Lovelace (6 GB VRAM)** and **16 GB system RAM**.
+**Rhythm-VI** is a Windows compatibility layer for running Xbox Series titles natively on PC from user-supplied game files, built by combining [VIctory-Belobug-AMD](https://github.com/Belobug/VIctory-Belobug-AMD) (Renderer Ports #1, #2, #5, #6, #7 + Residency), [ScarlettPort](https://github.com/ZigZagBoi1/ScarlettPort) (`FastBoot`, `SkipCutscenes`, `LoadUnpaced`, `PressFile`, `RayTracing=0`), and [VIctory-NVIDIA](https://github.com/pepezin-ai/VIctory-NVIDIA) (**DLSS Super Resolution**, **Streamline DLSS-G Frame Generation**, **F1 settings menu**, **F3 telemetry panel**, and `VICTORY_DYNAMIC_SLOTS=524288`), plus **Rhythm-VI** optimizations for **NVIDIA Ada Lovelace (6 GB VRAM)** and **16 GB system RAM**.
 
 > **This repository contains no game files, code, or assets.** You must supply your own legal dump of the title. This project is not affiliated with or endorsed by any game developer or publisher.
 
@@ -8,6 +8,8 @@
 
 ## What Rhythm-VI Adds
 
+- **DLSS Super Resolution + DLSS-G Frame Generation (`VICTORY_UPSCALE=dlss`, `VICTORY_FRAME_GEN=2`):** Hardware DLSS upscaling and Streamline Frame Generation (run `Get-NVIDIA-DLSS.cmd` once to fetch ~70 MB of NVIDIA SDK DLLs into `nvidia-sdk\`).
+- **In-Game F1 Settings Menu & F3 Overlay (`diag` build):** Press `F1` to tweak live settings (FPS cap, FG, DLSS sharpness) and `F3` to view real FPS vs FG FPS.
 - **NVIDIA ROV Serialization Bypass (`VICTORY_NO_ROVS=1`):** Strips `D3D_SHADER_REQUIRES_ROVS` (`0x2000`) on UAVs inside ordered pixel-shader sections in `victory-shader`, preventing pixel-wave stalls on Ada Lovelace GPUs.
 - **Wide Shader Loads (`VICTORY_SHADER_OPT=127`):** Enables 4-dword `WIDE` bitcode optimization passes by default.
 - **256-Byte In-Place CBV Fast Path (`VICTORY_PORT_CBV_256=1`):** Binds 256-byte-aligned constant buffers directly from `PORT_CONSTANTS` memory without CPU `scratch_held` allocation or `defer_constants` copies (critical on NVIDIA where `1,000,000`-slot Tier 2 heaps disable `raw_twins`).

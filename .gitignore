@@ -82,4 +82,6 @@ Thumbs.db
 /logs/
 /captures*/
 /press.txt
+/victory-settings.txt
+/nvidia-sdk/
 frame-*.png

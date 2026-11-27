@@ -4,11 +4,13 @@
 param(
     [string]$Exe = 'c:\CHANCHALE\GAMERUN\game_scarlett_master.exe',
     [ValidateSet('series-s', 'series-x')][string]$Console = 'series-s',
-    [ValidateSet('diag', 'release')][string]$Build = 'release',
+    [ValidateSet('diag', 'release')][string]$Build = 'diag',
     [switch]$FastBoot,
     [switch]$RayTracing,
+    [switch]$NoDlss,
+    [switch]$NoFrameGen,
     [switch]$Safe,
-    [string]$Output = '1280x720',
+    [string]$Output = '1920x1080',
     [string]$FrameIntervalMs = '33.333',
     [hashtable]$More = @{}
 )
@@ -21,10 +23,10 @@ if (-not (Test-Path $Exe)) { throw "Missing $Exe." }
 
 $settings = [ordered]@{
     VICTORY_D3D12_ADAPTER      = 'NVIDIA'
-    VICTORY_UPSCALER           = '6'
     VICTORY_RENDER_SCALE       = '0.5'
     VICTORY_NO_ROVS            = '1'
     VICTORY_SHADER_OPT         = '127'
+    VICTORY_DYNAMIC_SLOTS      = '524288'
     VICTORY_TEXTURE_NO_WAIT    = '1'
     VICTORY_RELAY              = '2'
     VICTORY_WIDE_BACK          = '1'
@@ -91,6 +93,21 @@ if ($FastBoot) {
 
 if ($Output) {
     $settings.VICTORY_OUTPUT = $Output
+}
+
+$dlssDir = Join-Path $root 'nvidia-sdk\DLSS\lib\Windows_x86_64\rel'
+$slDir = Join-Path $root 'nvidia-sdk\Streamline\bin\x64'
+if (-not $NoDlss -and (Test-Path (Join-Path $dlssDir 'nvngx_dlss.dll'))) {
+    $settings.VICTORY_UPSCALE = 'dlss'
+    $settings.VICTORY_DLSS_DIR = $dlssDir
+    $settings.VICTORY_DLSS_BEFORE_SL = '1'
+} else {
+    $settings.VICTORY_UPSCALER = '6'
+}
+if (-not $NoFrameGen -and -not $RayTracing -and (Test-Path (Join-Path $slDir 'sl.interposer.dll'))) {
+    $settings.VICTORY_STREAMLINE_DIR = $slDir
+    $settings.VICTORY_FRAME_GEN = '2'
+    $settings.VICTORY_FG_ANY_UPSCALE = '1'
 }
 
 foreach ($k in $More.Keys) {

@@ -590,14 +590,46 @@ extern "C" fn ffxQuery(context: *mut *mut c_void, desc: *mut Header) -> u32 {
 }
 
 extern "C" fn ffxDispatch(context: *mut *mut c_void, desc: *mut Header) -> u32 {
-    let Some(host) = HOST.get() else {
-        return NO_PROVIDER;
-    };
     if desc.is_null() {
         return PARAMETER;
     }
     // SAFETY: the title passes a description.
     let kind = unsafe { (*desc).kind };
+    if kind == DISPATCH_UPSCALE {
+        #[cfg(windows)]
+        {
+            let upscale_mode = std::env::var("VICTORY_UPSCALE").ok();
+            let want_dlss = upscale_mode.as_deref() == Some("dlss");
+            let want_stretch = upscale_mode.as_deref() == Some("stretch");
+            let want_fg = std::env::var("VICTORY_FRAME_GEN").is_ok_and(|v| !v.is_empty() && v != "1");
+            if want_dlss || want_stretch || want_fg {
+                // SAFETY: an upscaling, by its type.
+                let dispatch = unsafe { desc.cast::<DispatchUpscale>().read() };
+                let up = victory_gpu::list::Upscale {
+                    colour: dispatch.resources[0].resource as u64,
+                    depth: dispatch.resources[1].resource as u64,
+                    motion: dispatch.resources[2].resource as u64,
+                    exposure: dispatch.resources[3].resource as u64,
+                    output: dispatch.resources[6].resource as u64,
+                    render: dispatch.render_size,
+                    jitter: dispatch.jitter,
+                    motion_scale: dispatch.motion_scale,
+                    reset: (dispatch.settings[4] & 0xff) != 0,
+                    pre_exposure: f32::from_bits(dispatch.settings[3]),
+                    near: f32::from_bits(dispatch.settings[5]),
+                    far: f32::from_bits(dispatch.settings[6]),
+                    frame_ms: f32::from_bits(dispatch.settings[2]),
+                    dlss: want_dlss,
+                };
+                if victory_gpu::list::upscale(dispatch.list, &up) {
+                    return OK;
+                }
+            }
+        }
+    }
+    let Some(host) = HOST.get() else {
+        return NO_PROVIDER;
+    };
     if kind != DISPATCH_UPSCALE {
         once!(
             warn,

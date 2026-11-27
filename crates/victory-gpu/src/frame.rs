@@ -113,6 +113,24 @@ pub(crate) fn current() -> u64 {
     FRAME.load(Ordering::Relaxed)
 }
 
+/// Updates the frame cap from the F1 menu (`""`: default 30 fps, `"0"`: uncapped, `"n"`: n fps).
+#[cfg(feature = "diagnostics")]
+pub(crate) fn set_cap(value: &str) {
+    let us = match value.trim().parse::<u32>() {
+        Ok(0) => 500,
+        Ok(n) => (1_000_000 / u64::from(n)).max(500),
+        Err(_) => 33_333,
+    };
+    let interval = Duration::from_micros(us);
+    let first = LAST.iter().map(|t| t.load(Ordering::Relaxed)).max().unwrap_or(0);
+    if let Some(c) = clock().as_mut() {
+        c.start = Instant::now();
+        c.first = first;
+        c.interval = interval;
+        tracing::info!(interval = ?c.interval, "frame interval: the cap changed");
+    }
+}
+
 /// For tests of what is done once a frame.
 #[cfg(test)]
 pub(crate) fn test_advance() {

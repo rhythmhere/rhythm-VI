@@ -3915,6 +3915,8 @@ pub(crate) mod awake;
 mod card_steps;
 #[cfg_attr(not(feature = "diagnostics"), allow(dead_code))]
 pub(crate) mod indirects;
+#[cfg(feature = "diagnostics")]
+mod menu;
 mod panel;
 mod place;
 pub(crate) mod rec;
@@ -9242,6 +9244,8 @@ struct Presenter {
     /// Composes a second presented plane over the first ([`crate::compose`]).
     composer: Option<crate::compose::Composer>,
     panel: panel::Panel,
+    #[cfg(feature = "diagnostics")]
+    menu: menu::Menu,
 }
 
 /// The frame rate, shown in the window's caption every second and logged
@@ -9609,7 +9613,12 @@ impl Meter {
             self.caption = Some(buffer);
         }
         let Some(caption) = &self.caption else { return };
-        let text = format!(" | Rhythm-VI {fps:.0} fps {ms:.1} ms/frame {draws:.0} draws/frame");
+        let shown = crate::fg::shown_per_frame();
+        let text = if shown > 1 {
+            format!(" | Rhythm-VI {fps:.0} fps (frame gen {:.0} fps) {ms:.1} ms/frame {draws:.0} draws/frame", fps * f64::from(shown))
+        } else {
+            format!(" | Rhythm-VI {fps:.0} fps {ms:.1} ms/frame {draws:.0} draws/frame")
+        };
         let mut text: Vec<u16> = caption.iter().copied().chain(text.encode_utf16()).collect();
         text.push(0);
         // Setting the text waits for the window's thread (a title thread,
@@ -9894,6 +9903,8 @@ impl Host {
                 crate::popwatch::take(&self.device, list, texture)
             };
             p.panel.draw(self, copy, &back, (width, height), format);
+            #[cfg(feature = "diagnostics")]
+            p.menu.draw(self, copy, &back, (width, height), format);
             #[cfg(not(feature = "diagnostics"))]
             let _ = frame;
             if composed {
@@ -9939,10 +9950,14 @@ impl Host {
             #[cfg(feature = "diagnostics")]
             crate::replay::record::present(texture, state);
             let mut showing = crate::timeline::span("the host's Present");
+            crate::fg::present_start();
             let status = p.swap_chain.Present(0, DXGI_PRESENT(0));
+            crate::fg::present_end();
             showing.next("the frame meter");
             if status == windows::Win32::Foundation::S_OK {
                 p.panel.frame(p.meter.line_due());
+                #[cfg(feature = "diagnostics")]
+                p.menu.frame();
             }
             let presented = p.meter.record_present(p.hwnd, status);
             showing.end();
@@ -9968,6 +9983,7 @@ impl Host {
         // SAFETY: plain object creation for our window.
         unsafe {
             let factory: IDXGIFactory2 = CreateDXGIFactory2(DXGI_CREATE_FACTORY_FLAGS(0))?;
+            let factory = crate::fg::start(&self.device, factory);
             let desc = DXGI_SWAP_CHAIN_DESC1 {
                 Width: width,
                 Height: height,
@@ -9999,6 +10015,8 @@ impl Host {
                 meter: Meter::new(),
                 composer: None,
                 panel: panel::Panel::new(),
+                #[cfg(feature = "diagnostics")]
+                menu: menu::Menu::new(),
             })
         }
     }

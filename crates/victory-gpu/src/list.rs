@@ -2451,3 +2451,101 @@ mod tests {
         }
     }
 }
+
+/// What the title gives its upscale (`ffxDispatch`), for DLSS / stretch and
+/// Streamline DLSS-G Frame Generation.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Upscale {
+    pub colour: u64,
+    pub depth: u64,
+    pub motion: u64,
+    pub exposure: u64,
+    pub output: u64,
+    pub render: [u32; 2],
+    pub jitter: [f32; 2],
+    pub motion_scale: [f32; 2],
+    pub reset: bool,
+    pub pre_exposure: f32,
+    pub near: f32,
+    pub far: f32,
+    pub frame_ms: f32,
+    pub dlss: bool,
+}
+
+#[cfg(windows)]
+pub fn upscale(this: *const std::ffi::c_void, up: &Upscale) -> bool {
+    let this: This = this.cast();
+    if this.is_null() || up.colour == 0 || up.output == 0 {
+        return false;
+    }
+    upscale_now(this, up)
+}
+
+#[cfg(windows)]
+pub(super) fn upscale_now(this: This, up: &Upscale) -> bool {
+    const SHADER_READ: u32 = 0x40;
+    const UNORDERED: u32 = 0x8;
+    let t = |a: u64| -> This { a as This };
+    let (colour, output) = (t(up.colour), t(up.output));
+    let mut done = false;
+    with_state(this, |list, state| {
+        let (Some(to), Some(from), Some(host)) = (
+            crate::resource::host_resource(output),
+            crate::resource::host_resource(colour),
+            crate::host::host(),
+        ) else {
+            return;
+        };
+        ensure_state(list, colour, SHADER_READ);
+        ensure_state(list, output, UNORDERED);
+        #[cfg(feature = "dlss")]
+        if up.dlss {
+            let input = |a: u64| {
+                let r = t(a);
+                crate::resource::host_resource(r).inspect(|_| ensure_state(list, r, SHADER_READ))
+            };
+            let inputs = crate::dlss::Inputs {
+                colour: &from,
+                depth: input(up.depth),
+                motion: input(up.motion),
+                exposure: input(up.exposure),
+                output: &to,
+                jitter: up.jitter,
+                motion_scale: up.motion_scale,
+                render: up.render,
+                reset: up.reset,
+                pre_exposure: up.pre_exposure,
+                near: up.near,
+                far: up.far,
+                frame_ms: up.frame_ms,
+            };
+            done = crate::dlss::record(&host.device, &list.list, &inputs);
+            if done && !crate::fg::any_upscale() {
+                crate::fg::note_titles(up.depth, up.motion);
+            }
+        }
+        if !done {
+            done = crate::stretch::record_stretch(&host.device, &list.list, to, from, up.render);
+        }
+        if done {
+            crate::texture::host_written(output);
+            if crate::fg::active() && crate::fg::any_upscale() {
+                // SAFETY: a live resource.
+                let c = unsafe { from.GetDesc() };
+                crate::fg::from_upscale(
+                    up.render,
+                    [c.Width as u32, c.Height],
+                    up.jitter,
+                    up.motion_scale,
+                    up.near,
+                    up.far,
+                    up.reset,
+                    up.depth,
+                    up.motion,
+                );
+            }
+        }
+        state.replay(list);
+    });
+    done
+}

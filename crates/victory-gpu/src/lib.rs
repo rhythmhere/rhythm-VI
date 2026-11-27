@@ -109,6 +109,15 @@ mod upload;
 #[cfg(windows)]
 mod watch;
 #[cfg(windows)]
+pub mod streamline;
+#[cfg(windows)]
+mod fg;
+#[cfg(windows)]
+mod stretch;
+#[cfg(all(windows, feature = "dlss"))]
+mod dlss;
+pub static SETTINGS_MENU_OPEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(windows)]
 mod texback;
 
 #[cfg(windows)]
