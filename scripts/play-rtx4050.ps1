@@ -4,7 +4,7 @@
 param(
     [string]$Exe = 'c:\CHANCHALE\GAMERUN\game_scarlett_master.exe',
     [ValidateSet('series-s', 'series-x')][string]$Console = 'series-s',
-    [ValidateSet('diag', 'release')][string]$Build = 'diag',
+    [ValidateSet('diag', 'release')][string]$Build = 'release',
     [switch]$FastBoot,
     [switch]$RayTracing,
     [switch]$NoDlss,
@@ -26,7 +26,7 @@ $settings = [ordered]@{
     VICTORY_RENDER_SCALE       = '0.5'
     VICTORY_WAVE64_PAIRED      = '1'
     VICTORY_F16_NEAREST        = '1'
-    VICTORY_TEXTURE_DROP_MIPS  = '2'
+    VICTORY_TEXTURE_DROP_MIPS  = '0'
     VICTORY_NO_ROVS            = '1'
     VICTORY_SHADER_OPT         = '127'
     VICTORY_DYNAMIC_SLOTS      = '524288'
@@ -78,7 +78,7 @@ if ($Safe) {
 } else {
     $settings.VICTORY_THIN = '1'
     $settings.VICTORY_JOIN_PARTS = '8'
-    $settings.VICTORY_THIN_THREADS = '6'
+    $settings.VICTORY_THIN_THREADS = '8'
     $settings.VICTORY_UPLOAD_AHEAD = '1'
     $settings.VICTORY_PORT_CONSTANTS = '1'
     $settings.VICTORY_PORT_DESCRIPTORS = '1'
