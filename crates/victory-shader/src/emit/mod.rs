@@ -200,6 +200,13 @@ pub fn no_rovs() -> bool {
     *ON.get_or_init(|| std::env::var_os("VICTORY_NO_ROVS").is_some_and(|v| v == "1"))
 }
 
+/// Whether ray-query instructions return a miss at once (`VICTORY_RT_MISS=1`).
+/// Part of the translation: the shader cache keys on it.
+pub fn rt_miss() -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ON.get_or_init(|| std::env::var_os("VICTORY_RT_MISS").is_some_and(|v| v == "1"))
+}
+
 /// Whether the structure builder's accesses through its root views stay near
 /// them, and a size in a structure's header that cannot be one counts as none
 /// (`VICTORY_BVH_BOUNDS=0`: neither). Part of the translation: the shader

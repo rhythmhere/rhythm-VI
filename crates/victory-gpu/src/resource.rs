@@ -271,9 +271,19 @@ pub(crate) fn pc_format(format: u32) -> u32 {
 /// shortcut: copies between such a target and a texture the title fills
 /// itself in the 16-bit format are skipped ([`stands_in`]); convert them
 /// if a pass turns out to need one.
+/// `VICTORY_E5_TARGETS=r11g11b10` uses 32-bit R11G11B10_FLOAT (26) instead of
+/// 64-bit R16G16B16A16_FLOAT (10) for R9G9B9E5 lighting targets.
+fn e5_stand_in() -> u32 {
+    static STAND_IN: std::sync::OnceLock<u32> = std::sync::OnceLock::new();
+    *STAND_IN.get_or_init(|| match std::env::var("VICTORY_E5_TARGETS").ok().as_deref() {
+        Some(v) if v.eq_ignore_ascii_case("r11g11b10") => 26,
+        _ => 10,
+    })
+}
+
 pub(crate) fn target_format(format: u32) -> u32 {
-    const STAND_INS: [(u32, u32); 3] = [(86, 28), (115, 28), (67, 10)];
-    let Some(i) = STAND_INS.iter().position(|&(f, _)| f == format) else {
+    let stand_ins: [(u32, u32); 3] = [(86, 28), (115, 28), (67, e5_stand_in())];
+    let Some(i) = stand_ins.iter().position(|&(f, _)| f == format) else {
         return format;
     };
     #[cfg(windows)]
@@ -281,7 +291,7 @@ pub(crate) fn target_format(format: u32) -> u32 {
         use windows::Win32::Graphics::Direct3D12::*;
         static REFUSED: std::sync::OnceLock<[bool; 3]> = std::sync::OnceLock::new();
         let refused = REFUSED.get_or_init(|| {
-            STAND_INS.map(|(f, to)| {
+            stand_ins.map(|(f, to)| {
                 let Some(host) = crate::host::host() else {
                     return false;
                 };
@@ -307,7 +317,7 @@ pub(crate) fn target_format(format: u32) -> u32 {
             })
         });
         if refused[i] {
-            return STAND_INS[i].1;
+            return stand_ins[i].1;
         }
     }
     format

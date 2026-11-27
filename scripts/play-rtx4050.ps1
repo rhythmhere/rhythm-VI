@@ -46,8 +46,11 @@ $settings = [ordered]@{
     VICTORY_WINDOW_TAILS       = '1'
     VICTORY_WINDOW_BUDGET_MB   = '512'
     VICTORY_SNAPSHOT_POOL      = '16'
-    VICTORY_CARD_BUFFERS_MIN_KB = '64'
-    VICTORY_CARD_BUFFERS_MB    = '512'
+    VICTORY_CARD_BUFFERS_MIN_MB = '1'
+    VICTORY_CARD_BUFFERS_MB    = '1024'
+    VICTORY_WINDOWS_BAR_MB     = '1024'
+    VICTORY_E5_TARGETS         = 'r11g11b10'
+    VICTORY_RT_MISS            = '1'
     VICTORY_CARD_ROOM_FOR_TARGETS_MB = '1536'
     VICTORY_TEXTURE_ROOM_PERCENT = '65'
     VICTORY_TEXTURE_BACK       = '0'
@@ -84,6 +87,10 @@ if ($RayTracing) {
     $settings.VICTORY_RAY_TRACING = '1'
 } else {
     $settings.VICTORY_RAY_TRACING = '0'
+    $rtSkip = Join-Path $root 'scripts\rt_off_hashes.txt'
+    if (Test-Path $rtSkip) {
+        $settings.VICTORY_SKIP_PIPELINES = $rtSkip
+    }
 }
 
 if ($FastBoot) {
