@@ -172,6 +172,11 @@ pub(crate) fn alias(list: &HostList, placed: This, source: This) -> bool {
     const TARGET_OR_UNORDERED: u32 = 0x4 | 0x8;
     const COPY_DEST: u32 = 0x400;
     const COPY_SOURCE: u32 = 0x800;
+    // Host copies with other levels than each other's: filled from title
+    // memory instead (`crate::resource::drop_levels`).
+    if crate::resource::dropped(placed) != crate::resource::dropped(source) {
+        return false;
+    }
     // (All of its levels: the copy is level by level.)
     crate::resource::want_level(placed, 0);
     let (Some(to), Some(from)) = (
@@ -1860,7 +1865,7 @@ fn staging(resource: This, copy: &crate::resource::HostTexture, first: u32) -> O
     let host = host()?;
     // SAFETY: a live resource.
     let d = unsafe { texture.GetDesc() };
-    let level0 = copy.base;
+    let level0 = copy.base + crate::resource::drop_levels(&desc);
     let mips = level0 + u32::from(d.MipLevels);
     let first = crate::resource::read_from(&layout, first).max(level0).min(mips - 1);
     let read = layout.bytes_from(first) as usize;

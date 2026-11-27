@@ -207,6 +207,16 @@ pub fn rt_miss() -> bool {
     *ON.get_or_init(|| std::env::var_os("VICTORY_RT_MISS").is_some_and(|v| v == "1"))
 }
 
+/// Whether console wave64 compute programs that need 64 lanes take the paired form
+/// (`VICTORY_WAVE64_PAIRED=1`; off by default). Part of the shader cache key.
+/// Needed on 32-lane NVIDIA GPUs (RTX 4050/4060/4070 etc.) for correct wave
+/// operations in lighting and colour compute shaders.
+pub fn paired_compute_enabled() -> bool {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ENABLED.get_or_init(|| std::env::var_os("VICTORY_WAVE64_PAIRED").is_some_and(|v| v == "1"))
+}
+
+
 /// Whether the structure builder's accesses through its root views stay near
 /// them, and a size in a structure's header that cannot be one counts as none
 /// (`VICTORY_BVH_BOUNDS=0`: neither). Part of the translation: the shader
@@ -3129,6 +3139,7 @@ mod barycentric_tests {
     }
 
     const S_ENDPGM: u32 = 0xBF81_0000;
+
 
     /// An interpolation whose i is computed (`v_mul_f32 v3, 0.5, v0`) reads
     /// the attribute's vertices: TEXCOORD0 becomes constant, read with

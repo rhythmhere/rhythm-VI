@@ -24,6 +24,9 @@ if (-not (Test-Path $Exe)) { throw "Missing $Exe." }
 $settings = [ordered]@{
     VICTORY_D3D12_ADAPTER      = 'NVIDIA'
     VICTORY_RENDER_SCALE       = '0.5'
+    VICTORY_WAVE64_PAIRED      = '1'
+    VICTORY_F16_NEAREST        = '1'
+    VICTORY_TEXTURE_DROP_MIPS  = '2'
     VICTORY_NO_ROVS            = '1'
     VICTORY_SHADER_OPT         = '127'
     VICTORY_DYNAMIC_SLOTS      = '524288'
@@ -73,8 +76,9 @@ if ($Safe) {
     $settings.VICTORY_UNDER_WIDE = '0'
     $settings.VICTORY_LAND_ECHO = '0'
 } else {
-    $settings.VICTORY_THIN = '0'
-    $settings.VICTORY_JOIN_PARTS = '4'
+    $settings.VICTORY_THIN = '1'
+    $settings.VICTORY_JOIN_PARTS = '8'
+    $settings.VICTORY_THIN_THREADS = '6'
     $settings.VICTORY_UPLOAD_AHEAD = '1'
     $settings.VICTORY_PORT_CONSTANTS = '1'
     $settings.VICTORY_PORT_DESCRIPTORS = '1'
