@@ -40,7 +40,8 @@ $settings = [ordered]@{
     VICTORY_TITLE_PRIORITIES   = '0'
     VICTORY_CARD_AWAKE         = '1'
     VICTORY_SHOW_AFTER         = '1'
-    VICTORY_AMBIENT            = '0.8'
+    VICTORY_AMBIENT            = 'constant:0.15'
+    VICTORY_AMBIENT_AIR        = '0.8'
     VICTORY_LEVELS_ON_DEMAND   = '0'
     VICTORY_WINDOW_KB          = '256'
     VICTORY_WINDOW_TAILS       = '1'
@@ -87,10 +88,7 @@ if ($RayTracing) {
     $settings.VICTORY_RAY_TRACING = '1'
 } else {
     $settings.VICTORY_RAY_TRACING = '0'
-    $rtSkip = Join-Path $root 'scripts\rt_off_hashes.txt'
-    if (Test-Path $rtSkip) {
-        $settings.VICTORY_SKIP_PIPELINES = $rtSkip
-    }
+    $settings.VICTORY_SKIP_PIPELINES = 'none'
 }
 
 if ($FastBoot) {
